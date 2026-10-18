@@ -10,6 +10,17 @@ variable "name" {
   default     = "pipeline-dev"
 }
 
+variable "availability_zones" {
+  description = "Exact Availability Zones to use, by name."
+  type        = list(string)
+  default     = ["us-east-1a", "us-east-1b"]
+
+  validation {
+    condition     = length(var.availability_zones) >= 2
+    error_message = "Use at least two Availability Zones for high availability."
+  }
+}
+
 variable "vpc_cidr" {
   description = "CIDR block for the VPC."
   type        = string

@@ -2,12 +2,20 @@
 # Availability Zones, no internet route, and the default security
 # group locked down. Everything here is free except the KMS key.
 
+# Allowlist the exact zones by name. Without this filter the result set
+# would silently grow if AWS added a zone, and resources could shift.
+# (Flagged by Checkov CKV_AWS_394 on the first pipeline run.)
 data "aws_availability_zones" "available" {
   state = "available"
+
+  filter {
+    name   = "zone-name"
+    values = var.availability_zones
+  }
 }
 
 locals {
-  azs = slice(data.aws_availability_zones.available.names, 0, 2)
+  azs = data.aws_availability_zones.available.names
 }
 
 resource "aws_vpc" "main" {
