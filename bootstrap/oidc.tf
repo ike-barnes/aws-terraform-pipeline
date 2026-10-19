@@ -9,6 +9,9 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 locals {
   repo = "${var.github_owner}/${var.github_repo}"
+
+  # Immutable subject format: repo:OWNER@OWNER_ID/REPO@REPO_ID:<context>
+  repo_subject = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}"
 }
 
 # ---------------------------------------------------------------------
@@ -34,7 +37,7 @@ data "aws_iam_policy_document" "plan_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${local.repo}:pull_request"]
+      values   = ["${local.repo_subject}:pull_request"]
     }
   }
 }
