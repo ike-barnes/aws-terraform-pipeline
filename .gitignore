@@ -20,3 +20,6 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+
+# Backend settings that contain account-specific names
+backend.hcl

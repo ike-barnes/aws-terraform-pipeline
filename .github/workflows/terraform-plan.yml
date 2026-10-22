@@ -1,4 +1,4 @@
-# Runs on every pull request that touches the infrastructure.
+# Runs on every pull request to main.
 #   1. checks: format, validate, lint, and security scan. No AWS access.
 #   2. plan:   signs in to AWS with OIDC (no stored keys), runs
 #              terraform plan, and posts the result on the pull request.
@@ -9,13 +9,11 @@
 
 name: terraform-plan
 
+# No paths filter: both checks are required by the branch ruleset, so
+# they must report on every pull request, even docs-only ones.
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "infra/**"
-      - ".tflint.hcl"
-      - ".github/workflows/terraform-plan.yml"
 
 # Least privilege by default. Jobs ask for more only if they need it.
 permissions:
@@ -104,6 +102,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          mask-aws-account-id: true # hide the account ID in public logs
           role-session-name: gha-plan-pr${{ github.event.pull_request.number }}-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
@@ -140,7 +139,8 @@ jobs:
           script: |
             const fs = require('fs');
             const marker = '<!-- terraform-plan-comment -->';
-            let plan = fs.readFileSync('infra/plan.txt', 'utf8');
+            // The comment is public: redact every 12-digit AWS account ID.
+            let plan = fs.readFileSync('infra/plan.txt', 'utf8').replace(/\b\d{12}\b/g, '************');
 
             const summary = (plan.match(/Plan: .*|No changes\..*/) || ['Plan failed: see the log'])[0];
             const status = { '0': 'No changes', '2': 'Changes to apply', '1': 'Plan failed' }[process.env.EXIT_CODE] || 'Unknown';
