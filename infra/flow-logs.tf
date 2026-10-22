@@ -58,6 +58,9 @@ resource "aws_cloudwatch_log_group" "flow" {
 resource "aws_iam_role" "flow_logs" {
   name = "${var.name}-vpc-flow-logs"
 
+  # Required: the pipeline can only create roles that carry this boundary.
+  permissions_boundary = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/pipeline-workload-boundary"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
